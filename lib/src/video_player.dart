@@ -84,7 +84,7 @@ class VideoPlayer {
 
     if (await shouldUseHlsLibrary()) {
       try {
-        if (headers.containsKey("Cache-Control")) {
+        if (!headers.containsKey("Cache-Control")) {
           headers.addAll({"Cache-Control": "no-cache"});
         }
 
