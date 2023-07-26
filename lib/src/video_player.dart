@@ -312,15 +312,13 @@ class VideoPlayer {
   }
 
   bool canPlayHlsNatively() {
-    // fixes bug in android phones
-    return true;
-    // bool canPlayHls = false;
-    // try {
-    //   final String canPlayType =
-    //       _videoElement.canPlayType('application/vnd.apple.mpegurl');
-    //   canPlayHls = canPlayType != '';
-    // } catch (e) {}
-    // return canPlayHls;
+    bool canPlayHls = false;
+    try {
+      final String canPlayType =
+          _videoElement.canPlayType('application/vnd.apple.mpegurl');
+      canPlayHls = canPlayType != '';
+    } catch (e) {}
+    return canPlayHls;
   }
 
   Future<bool> shouldUseHlsLibrary() async {
