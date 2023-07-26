@@ -116,7 +116,7 @@ class VideoPlayer {
 
         _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
           print('_hls!.on(hlsError..');
-          print('${inspect(data)}');
+          print('ERR: ${inspect(data)}; ErrorData: ${ErrorData(data).details}; ${ErrorData(data).type}');
           final ErrorData _data = ErrorData(data);
           if (_data.fatal) {
             _eventController.addError(PlatformException(
