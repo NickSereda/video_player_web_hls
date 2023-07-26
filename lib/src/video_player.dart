@@ -10,6 +10,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:js/js.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player_web_hls/hls.dart';
@@ -116,7 +117,9 @@ class VideoPlayer {
             ));
           }
         }));
-        _videoElement.onCanPlay.listen((dynamic _) {
+        _videoElement.onCanPlay
+            .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+            .listen((dynamic _) {
           if (!_isInitialized) {
             _isInitialized = true;
             _sendInitialized();
@@ -139,21 +142,21 @@ class VideoPlayer {
       });
     }
 
-    _videoElement.onCanPlayThrough.listen((dynamic _) {
+    _videoElement.onCanPlayThrough.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((dynamic _) {
       setBuffering(false);
     });
 
-    _videoElement.onPlaying.listen((dynamic _) {
+    _videoElement.onPlaying.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((dynamic _) {
       setBuffering(false);
     });
 
-    _videoElement.onWaiting.listen((dynamic _) {
+    _videoElement.onWaiting.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((dynamic _) {
       setBuffering(true);
       _sendBufferingRangesUpdate();
     });
 
     // The error event fires when some form of error occurs while attempting to load or perform the media.
-    _videoElement.onError.listen((html.Event _) {
+    _videoElement.onError.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((html.Event _) {
       setBuffering(false);
       // The Event itself (_) doesn't contain info about the actual error.
       // We need to look at the HTMLMediaElement.error.
@@ -166,7 +169,7 @@ class VideoPlayer {
       ));
     });
 
-    _videoElement.onEnded.listen((dynamic _) {
+    _videoElement.onEnded.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((dynamic _) {
       setBuffering(false);
       _eventController.add(VideoEvent(eventType: VideoEventType.completed));
     });
@@ -319,9 +322,9 @@ class VideoPlayer {
   bool canPlayHlsNatively() {
     bool canPlayHls = false;
     try {
-      final String canPlayType = _videoElement.canPlayType('application/vnd.apple.mpegurl');
-      canPlayHls =
-          canPlayType != '';
+      final String canPlayType =
+          _videoElement.canPlayType('application/vnd.apple.mpegurl');
+      canPlayHls = canPlayType != '';
     } catch (e) {}
     return canPlayHls;
   }
