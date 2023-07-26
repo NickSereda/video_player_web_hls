@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:developer';
 import 'dart:html' as html;
 import 'dart:html';
 import 'dart:math';
@@ -313,13 +312,15 @@ class VideoPlayer {
   }
 
   bool canPlayHlsNatively() {
-    bool canPlayHls = false;
-    try {
-      final String canPlayType =
-          _videoElement.canPlayType('application/vnd.apple.mpegurl');
-      canPlayHls = canPlayType != '';
-    } catch (e) {}
-    return canPlayHls;
+    // fixes bug in android phones
+    return true;
+    // bool canPlayHls = false;
+    // try {
+    //   final String canPlayType =
+    //       _videoElement.canPlayType('application/vnd.apple.mpegurl');
+    //   canPlayHls = canPlayType != '';
+    // } catch (e) {}
+    // return canPlayHls;
   }
 
   Future<bool> shouldUseHlsLibrary() async {
