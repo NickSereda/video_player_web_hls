@@ -110,6 +110,7 @@ class VideoPlayer {
         }));
         _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
           print('_hls!.on(hlsError..');
+          print('${data.toString()}');
           final ErrorData _data = ErrorData(data);
           if (_data.fatal) {
             _eventController.addError(PlatformException(
@@ -310,6 +311,7 @@ class VideoPlayer {
   /// ([_isBuffering]), this dispatches a [VideoEvent].
   @visibleForTesting
   void setBuffering(bool buffering) {
+    print('setBuffering');
     if (_isBuffering != buffering) {
       _isBuffering = buffering;
       _eventController.add(VideoEvent(
