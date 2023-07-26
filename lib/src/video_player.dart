@@ -67,6 +67,7 @@ class VideoPlayer {
   Stream<VideoEvent> get events => _eventController.stream;
 
   final BehaviorSubject<Object> _errorController = BehaviorSubject<Object>();
+  StreamSubscription<Object>? _errorStreamSubscription;
 
   /// Initializes the wrapped [html.VideoElement].
   ///
@@ -74,7 +75,7 @@ class VideoPlayer {
   /// and attaches listeners to the internal events from the [html.VideoElement]
   /// to react to them / expose them through the [VideoPlayer.events] stream.
   Future<void> initialize() async {
-    _errorController.stream
+    _errorStreamSubscription = _errorController.stream
         .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 500)))
         .listen((Object data) {
       print('_hls!.on(hlsError..');
@@ -275,6 +276,7 @@ class VideoPlayer {
   /// Disposes of the current [html.VideoElement].
   void dispose() {
     _videoElement.removeAttribute('src');
+    _errorStreamSubscription?.cancel();
     _videoElement.load();
     _hls?.stopLoad();
   }
