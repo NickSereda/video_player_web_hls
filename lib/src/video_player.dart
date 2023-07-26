@@ -66,12 +66,30 @@ class VideoPlayer {
   /// Returns the [Stream] of [VideoEvent]s from the inner [html.VideoElement].
   Stream<VideoEvent> get events => _eventController.stream;
 
+  final BehaviorSubject<Object> _errorController = BehaviorSubject<Object>();
+
   /// Initializes the wrapped [html.VideoElement].
   ///
   /// This method sets the required DOM attributes so videos can [play] programmatically,
   /// and attaches listeners to the internal events from the [html.VideoElement]
   /// to react to them / expose them through the [VideoPlayer.events] stream.
   Future<void> initialize() async {
+    _errorController.stream
+        .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 500)))
+        .listen((Object data) {
+      print('_hls!.on(hlsError..');
+      print(
+          'ERR: ${inspect(data)}; ErrorData: ${ErrorData(data).details}; ${ErrorData(data).type}');
+      final ErrorData _data = ErrorData(data);
+      if (_data.fatal) {
+        _eventController.addError(PlatformException(
+          code: _kErrorValueToErrorName[2]!,
+          message: _data.type,
+          details: _data.details,
+        ));
+      }
+    });
+
     _videoElement
       ..autoplay = false
       ..controls = false;
@@ -84,10 +102,6 @@ class VideoPlayer {
 
     if (await shouldUseHlsLibrary()) {
       try {
-        // if (!headers.containsKey("Cache-Control")) {
-        //   headers.addAll({"Cache-Control": "no-cache"});
-        // }
-
         _hls = Hls(
           HlsConfig(
             xhrSetup: allowInterop(
@@ -110,27 +124,15 @@ class VideoPlayer {
         );
         _hls!.attachMedia(_videoElement);
         _hls!.on('hlsMediaAttached', allowInterop((dynamic _, dynamic __) {
-          print('_hls!.on(hlsMediaAttached..');
           _hls!.loadSource(uri.toString());
         }));
 
         _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
-          print('_hls!.on(hlsError..');
-          print('ERR: ${inspect(data)}; ErrorData: ${ErrorData(data).details}; ${ErrorData(data).type}');
-          final ErrorData _data = ErrorData(data);
-          if (_data.fatal) {
-            _eventController.addError(PlatformException(
-              code: _kErrorValueToErrorName[2]!,
-              message: _data.type,
-              details: _data.details,
-            ));
-          }
+          print("_hls!.on('hlsError..");
+          _errorController.add(data);
         }));
 
-        _videoElement.onCanPlay
-            // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
-            .listen((dynamic _) {
-          print('onCanPlay..');
+        _videoElement.onCanPlay.listen((dynamic _) {
           if (!_isInitialized) {
             _isInitialized = true;
             _sendInitialized();
@@ -153,23 +155,15 @@ class VideoPlayer {
       });
     }
 
-    _videoElement.onCanPlayThrough
-        // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
-        .listen((dynamic _) {
-      print('onCanPlayThrough..');
+    _videoElement.onCanPlayThrough.listen((dynamic _) {
       setBuffering(false);
     });
 
-    _videoElement.onPlaying
-        // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
-        .listen((dynamic _) {
-      print('onPlaying..');
+    _videoElement.onPlaying.listen((dynamic _) {
       setBuffering(false);
     });
 
-    _videoElement.onWaiting
-        // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
-        .listen((dynamic _) {
+    _videoElement.onWaiting.listen((dynamic _) {
       print('onWaiting..');
       setBuffering(true);
       _sendBufferingRangesUpdate();
@@ -192,11 +186,7 @@ class VideoPlayer {
       ));
     });
 
-    _videoElement.onEnded
-        //.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
-        .listen((dynamic _) {
-      print('_videoElement.onEnded..');
-
+    _videoElement.onEnded.listen((dynamic _) {
       setBuffering(false);
       _eventController.add(VideoEvent(eventType: VideoEventType.completed));
     });
@@ -291,8 +281,6 @@ class VideoPlayer {
 
   // Sends an [VideoEventType.initialized] [VideoEvent] with info about the wrapped video.
   void _sendInitialized() {
-    print('_sendInitialized..');
-
     final Duration? duration =
         convertNumVideoDurationToPluginDuration(_videoElement.duration);
 
@@ -318,7 +306,6 @@ class VideoPlayer {
   /// ([_isBuffering]), this dispatches a [VideoEvent].
   @visibleForTesting
   void setBuffering(bool buffering) {
-    print('setBuffering');
     if (_isBuffering != buffering) {
       _isBuffering = buffering;
       _eventController.add(VideoEvent(
