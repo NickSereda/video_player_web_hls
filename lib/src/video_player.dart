@@ -11,7 +11,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:js/js.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player_web_hls/hls.dart';
@@ -66,31 +65,12 @@ class VideoPlayer {
   /// Returns the [Stream] of [VideoEvent]s from the inner [html.VideoElement].
   Stream<VideoEvent> get events => _eventController.stream;
 
-  final BehaviorSubject<Object> _errorController = BehaviorSubject<Object>();
-  StreamSubscription<Object>? _errorStreamSubscription;
-
   /// Initializes the wrapped [html.VideoElement].
   ///
   /// This method sets the required DOM attributes so videos can [play] programmatically,
   /// and attaches listeners to the internal events from the [html.VideoElement]
   /// to react to them / expose them through the [VideoPlayer.events] stream.
   Future<void> initialize() async {
-    _errorStreamSubscription = _errorController.stream
-        .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 500)))
-        .listen((Object data) {
-      print('_hls!.on(hlsError..');
-      print(
-          'ERR: ${inspect(data)}; ErrorData: ${ErrorData(data).details}; ${ErrorData(data).type}');
-      final ErrorData _data = ErrorData(data);
-      if (_data.fatal) {
-        _eventController.addError(PlatformException(
-          code: _kErrorValueToErrorName[2]!,
-          message: _data.type,
-          details: _data.details,
-        ));
-      }
-    });
-
     _videoElement
       ..autoplay = false
       ..controls = false;
@@ -128,10 +108,9 @@ class VideoPlayer {
           _hls!.loadSource(uri.toString());
         }));
 
-        _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
-          print("_hls!.on('hlsError..");
-          _errorController.add(data);
-        }));
+        // _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
+        //
+        // }));
 
         _videoElement.onCanPlay.listen((dynamic _) {
           if (!_isInitialized) {
@@ -165,16 +144,12 @@ class VideoPlayer {
     });
 
     _videoElement.onWaiting.listen((dynamic _) {
-      print('onWaiting..');
       setBuffering(true);
       _sendBufferingRangesUpdate();
     });
 
     // The error event fires when some form of error occurs while attempting to load or perform the media.
-    _videoElement.onError
-        .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 750)))
-        .listen((html.Event _) {
-      print('_videoElement.onError..');
+    _videoElement.onError.listen((html.Event _) {
       setBuffering(false);
       // The Event itself (_) doesn't contain info about the actual error.
       // We need to look at the HTMLMediaElement.error.
@@ -276,7 +251,6 @@ class VideoPlayer {
   /// Disposes of the current [html.VideoElement].
   void dispose() {
     _videoElement.removeAttribute('src');
-    _errorStreamSubscription?.cancel();
     _videoElement.load();
     _hls?.stopLoad();
   }
