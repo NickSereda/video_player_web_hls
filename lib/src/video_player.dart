@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:developer';
 import 'dart:html' as html;
 import 'dart:html';
 import 'dart:math';
@@ -115,7 +116,7 @@ class VideoPlayer {
 
         _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
           print('_hls!.on(hlsError..');
-          print('${data.toString()}');
+          print('${inspect(data)}');
           final ErrorData _data = ErrorData(data);
           if (_data.fatal) {
             _eventController.addError(PlatformException(
