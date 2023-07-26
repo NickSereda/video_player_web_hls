@@ -105,9 +105,11 @@ class VideoPlayer {
         );
         _hls!.attachMedia(_videoElement);
         _hls!.on('hlsMediaAttached', allowInterop((dynamic _, dynamic __) {
+          print('_hls!.on(hlsMediaAttached..');
           _hls!.loadSource(uri.toString());
         }));
         _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
+          print('_hls!.on(hlsError..');
           final ErrorData _data = ErrorData(data);
           if (_data.fatal) {
             _eventController.addError(PlatformException(
@@ -118,8 +120,9 @@ class VideoPlayer {
           }
         }));
         _videoElement.onCanPlay
-            .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+            // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
             .listen((dynamic _) {
+          print('onCanPlay..');
           if (!_isInitialized) {
             _isInitialized = true;
             _sendInitialized();
@@ -142,21 +145,33 @@ class VideoPlayer {
       });
     }
 
-    _videoElement.onCanPlayThrough.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((dynamic _) {
+    _videoElement.onCanPlayThrough
+       // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+        .listen((dynamic _) {
+      print('onCanPlayThrough..');
       setBuffering(false);
     });
 
-    _videoElement.onPlaying.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((dynamic _) {
+    _videoElement.onPlaying
+        // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+        .listen((dynamic _) {
+      print('onPlaying..');
       setBuffering(false);
     });
 
-    _videoElement.onWaiting.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((dynamic _) {
+    _videoElement.onWaiting
+        // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+        .listen((dynamic _) {
+      print('onWaiting..');
       setBuffering(true);
       _sendBufferingRangesUpdate();
     });
 
     // The error event fires when some form of error occurs while attempting to load or perform the media.
-    _videoElement.onError.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((html.Event _) {
+    _videoElement.onError
+        // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+        .listen((html.Event _) {
+      print('_videoElement.onError..');
       setBuffering(false);
       // The Event itself (_) doesn't contain info about the actual error.
       // We need to look at the HTMLMediaElement.error.
@@ -169,7 +184,11 @@ class VideoPlayer {
       ));
     });
 
-    _videoElement.onEnded.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275))).listen((dynamic _) {
+    _videoElement.onEnded
+    //.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+        .listen((dynamic _) {
+      print('_videoElement.onEnded..');
+
       setBuffering(false);
       _eventController.add(VideoEvent(eventType: VideoEventType.completed));
     });
@@ -264,6 +283,8 @@ class VideoPlayer {
 
   // Sends an [VideoEventType.initialized] [VideoEvent] with info about the wrapped video.
   void _sendInitialized() {
+    print('_sendInitialized..');
+
     final Duration? duration =
         convertNumVideoDurationToPluginDuration(_videoElement.duration);
 
