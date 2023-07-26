@@ -83,6 +83,10 @@ class VideoPlayer {
 
     if (await shouldUseHlsLibrary()) {
       try {
+        if (headers.containsKey("Cache-Control")) {
+          headers.addAll({"Cache-Control": "no-cache"});
+        }
+
         _hls = Hls(
           HlsConfig(
             xhrSetup: allowInterop(
@@ -108,6 +112,7 @@ class VideoPlayer {
           print('_hls!.on(hlsMediaAttached..');
           _hls!.loadSource(uri.toString());
         }));
+
         _hls!.on('hlsError', allowInterop((dynamic _, dynamic data) {
           print('_hls!.on(hlsError..');
           print('${data.toString()}');
@@ -120,6 +125,7 @@ class VideoPlayer {
             ));
           }
         }));
+
         _videoElement.onCanPlay
             // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
             .listen((dynamic _) {
@@ -147,7 +153,7 @@ class VideoPlayer {
     }
 
     _videoElement.onCanPlayThrough
-       // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+        // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
         .listen((dynamic _) {
       print('onCanPlayThrough..');
       setBuffering(false);
@@ -170,7 +176,7 @@ class VideoPlayer {
 
     // The error event fires when some form of error occurs while attempting to load or perform the media.
     _videoElement.onError
-        // .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+        .exhaustMap((i) => TimerStream(i, Duration(milliseconds: 750)))
         .listen((html.Event _) {
       print('_videoElement.onError..');
       setBuffering(false);
@@ -186,7 +192,7 @@ class VideoPlayer {
     });
 
     _videoElement.onEnded
-    //.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
+        //.exhaustMap((i) => TimerStream(i, Duration(milliseconds: 275)))
         .listen((dynamic _) {
       print('_videoElement.onEnded..');
 
