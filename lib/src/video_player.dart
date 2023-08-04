@@ -7,6 +7,7 @@ import 'dart:html' as html;
 import 'dart:html';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:js/js.dart';
@@ -322,6 +323,14 @@ class VideoPlayer {
   }
 
   Future<bool> shouldUseHlsLibrary() async {
+    if (kIsWeb) {
+      final userAgent =
+          html.window.navigator.userAgent.toString().toLowerCase();
+      if (userAgent.contains('android')) {
+        return true;
+      }
+    }
+    // Doesn't work for web android
     return isSupported() &&
         (uri.toString().contains('m3u8') || await _testIfM3u8()) &&
         !canPlayHlsNatively();
